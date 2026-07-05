@@ -1,0 +1,37 @@
+
+{
+  "name": "SavingsGoal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the savings goal"
+    },
+    "target_amount": {
+      "type": "number",
+      "description": "Target amount in BWP"
+    },
+    "saved_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount saved so far in BWP"
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional target date"
+    },
+    "color": {
+      "type": "string",
+      "default": "#0d9488",
+      "description": "Accent color for the goal"
+    }
+  },
+  "required": ["title", "target_amount"],
+  "rls": {
+    "create": true,
+    "read": { "created_by_id": "{{user.id}}" },
+    "update": { "created_by_id": "{{user.id}}" },
+    "delete": { "created_by_id": "{{user.id}}" }
+  }
+}
