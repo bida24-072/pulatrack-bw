@@ -1,0 +1,21 @@
+{
+  "name": "Budget",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Expense category name this limit applies to"
+    },
+    "monthly_limit": {
+      "type": "number",
+      "description": "Monthly spending limit in BWP (Pula)"
+    }
+  },
+  "required": ["category", "monthly_limit"],
+  "rls": {
+    "create": true,
+    "read": { "created_by_id": "{{user.id}}" },
+    "update": { "created_by_id": "{{user.id}}" },
+    "delete": { "created_by_id": "{{user.id}}" }
+  }
+}
