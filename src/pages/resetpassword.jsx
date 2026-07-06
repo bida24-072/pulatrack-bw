@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { base44, supabase } from "@/api/base44Client"; // Imported 'supabase' alongside 'base44'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,13 +8,23 @@ import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
-  const resetToken = searchParams.get("token");
+  const [isLinkValid, setIsLinkValid] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Checks if Supabase successfully swapped the URL hash for an active user session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setIsLinkValid(false);
+      }
+      setCheckingSession(false);
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +35,8 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ resetToken, newPassword });
+      // In our Supabase adapter, base44.auth.resetPassword updates the active session password
+      await base44.auth.resetPassword({ newPassword });
       window.location.href = "/login";
     } catch (err) {
       setError(err.message || "Failed to reset password");
@@ -34,12 +45,23 @@ export default function ResetPassword() {
     }
   };
 
-  if (!resetToken) {
+  // Prevent UI flashing or showing "Invalid link" while extracting URL hashes
+  if (checkingSession) {
+    return (
+      <AuthLayout icon={Lock} title="Verifying link" subtitle="Validating security context...">
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (!isLinkValid) {
     return (
       <AuthLayout
         icon={AlertTriangle}
         title="Invalid reset link"
-        subtitle="This password reset link is missing or invalid"
+        subtitle="This password reset link is missing or expired"
         footer={
           <Link to="/forgot-password" className="text-primary font-medium hover:underline">
             Request a new link
@@ -47,7 +69,7 @@ export default function ResetPassword() {
         }
       >
         <p className="text-sm text-foreground text-center">
-          The link you used appears to be incomplete. Please request a new password reset email.
+          The link you used appears to be incomplete, expired, or already used. Please request a new password reset email.
         </p>
       </AuthLayout>
     );
